@@ -4,7 +4,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='MCH2022 badge FAT FS upload tool')
 parser.add_argument("name", help="filename local")
-parser.add_argument("target", help="filename local")
+parser.add_argument("target", help="filename badge")
 args = parser.parse_args()
 
 name = args.name
@@ -16,3 +16,6 @@ if res:
     print("File uploaded")
 else:
     print("Uploaded failed")
+
+dev.reset()
+dev.disconnect()
