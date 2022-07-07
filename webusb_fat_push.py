@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from webusb import *
 import argparse
+from time import sleep
 
 parser = argparse.ArgumentParser(description='MCH2022 badge FAT FS upload tool')
 parser.add_argument("name", help="filename local")
@@ -17,5 +18,6 @@ if res:
 else:
     print("Uploaded failed")
 
+sleep(10) #TODO fix after write status is available
 dev.reset()
 dev.disconnect()
