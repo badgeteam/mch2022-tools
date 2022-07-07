@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import usb.core
 import usb.util
 import binascii
@@ -40,7 +41,12 @@ def usb_tx(title, data):
 with open(args.bitstream, "rb") as f:
     bitstream = f.read()
 
-device = usb.core.find(idVendor=0x16d0, idProduct=0x0f9a)
+if os.name == 'nt':
+    from usb.backend import libusb1
+    be = libusb1.get_backend(find_library=lambda x: os.path.dirname(__file__) + "\\libusb-1.0.dll")
+    device = usb.core.find(idVendor=0x16d0, idProduct=0x0f9a, backend=be)
+else:
+    device = usb.core.find(idVendor=0x16d0, idProduct=0x0f9a)
 
 if device is None:
     raise ValueError("Badge not found")
