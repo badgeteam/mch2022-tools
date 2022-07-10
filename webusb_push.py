@@ -11,6 +11,7 @@ args = parser.parse_args()
 name = args.name
 run = args.run
 
+print(f"Loading: {args.application} for installation as: {name} ...")
 with open(args.application, "rb") as f:
     application = f.read()
 

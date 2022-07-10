@@ -27,6 +27,33 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     if iteration == total:
         print()
 
+def printProgressTime(
+    totalMilliSeconds,
+    steps=10,
+    prefix="",
+    suffix="",
+    decimals=1,
+    length=20,
+    fill="█",
+    printEnd="\r",
+):
+    """
+    prints progress while sleeping totalMilliSeconds, bar is updated every `steps` milliseconds
+    other params
+    """
+    for i in range(0, totalMilliSeconds, steps):
+        printProgressBar(
+            i,
+            totalMilliSeconds - steps,
+            prefix,
+            suffix,
+            decimals,
+            length,
+            fill,
+            printEnd,
+        )
+        time.sleep(steps / 1000)
+
 class Commands(Enum):
     EXECFILE = 0
     HEARTBEAT = 1
@@ -100,18 +127,28 @@ class WebUSB():
         self.device.ctrl_transfer(self.REQUEST_TYPE_CLASS_TO_INTERFACE, self.REQUEST_MODE, 0x0001, self.webusb_esp32.bInterfaceNumber)
         self.device.ctrl_transfer(self.REQUEST_TYPE_CLASS_TO_INTERFACE, self.REQUEST_RESET, 0x0000, self.webusb_esp32.bInterfaceNumber)
         self.device.ctrl_transfer(self.REQUEST_TYPE_CLASS_TO_INTERFACE, self.REQUEST_BAUDRATE, 9216, self.webusb_esp32.bInterfaceNumber)
-    
-        time.sleep(4)   #Wait for the badge to have boot into webusb mode
+   
+        print("Booting into WebUSB, please wait ...")                          
+        printProgressTime(4000)  # Wait for the badge to have boot into webusb mode  
         while True:
             try:
                 self.ep_in.read(128)
             except Exception as e:
                 break
 
-    def receiveResponse(self):
+    def receiveResponse(self, show_hourglass=False):
+        """
+        receveives the response, for longish response times,
+        you can keep the user occupied by setting show_hourglass to True
+        """
         response = bytes([])
         starttime = time.time()
+        anim = 0
         while (time.time() - starttime) < self.TIMEOUT:
+            if show_hourglass:
+                print(f"\rWaiting for response { (1+(anim%3)) * '.'}   ", end="\r")
+                anim += 1
+
             data = None
             try:
                 data = bytes(self.ep_in.read(128))
@@ -122,6 +159,8 @@ class WebUSB():
                 response += data
             
             if len(response) >= self.PAYLOADHEADERLEN:
+                if show_hourglass:
+                    print()
                 command, payloadlen, verif, message_id = struct.unpack_from("<HIHI", response)
                 if verif != 0xADDE:
                     raise Exception("Failed verification")
@@ -130,7 +169,7 @@ class WebUSB():
         raise Exception("Timeout in receiving")
 
     
-    def sendPacket(self, packet, transfersize=2048):
+    def sendPacket(self, packet, transfersize=2048, show_response_hourglass=False):
         transfersize = 2048
         msg = packet.getMessage()
         starttime = time.time()
@@ -143,8 +182,8 @@ class WebUSB():
             if len(msg) > transfersize:
                 printProgressBar(i//transfersize, len(msg) // transfersize, length=20)
         #self.ep_out.write(packet.getMessage())
-        print(f"transfer speed: {len(msg)/(time.time()-starttime)}")
-        command, message_id, data = self.receiveResponse()
+        print(f"transfer speed: {(len(msg)/(time.time()-starttime)/1024):0.2f} kb/s")
+        command, message_id, data = self.receiveResponse(show_hourglass=show_response_hourglass)
         if message_id != packet.message_id:
             raise Exception("Mismatch in id")
         if command != packet.command.value:
@@ -222,7 +261,7 @@ class WebUSB():
         """
 
         payload = appname.encode(encoding="ascii") + b"\x00" + file
-        data = self.sendPacket(WebUSBPacket(Commands.APPFSWRITE, self.getMessageId(), payload))
+        data = self.sendPacket(WebUSBPacket(Commands.APPFSWRITE, self.getMessageId(), payload), show_response_hourglass=True)
         return data.decode().rstrip('\x00') == "ok"
     
     def appfsRemove(self, appname):
