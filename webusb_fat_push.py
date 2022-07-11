@@ -6,10 +6,11 @@ from time import sleep
 parser = argparse.ArgumentParser(description='MCH2022 badge FAT FS upload tool')
 parser.add_argument("name", help="filename local")
 parser.add_argument("target", help="filename badge")
+parser.add_argument("--address", help="USB device address", default=None)
 args = parser.parse_args()
 
 name = args.name
-dev = WebUSB()
+dev = WebUSB(address=args.address)
 with open(args.name, "rb") as file:
     data = file.read()
 res = dev.pushFSfile(args.target, data)
