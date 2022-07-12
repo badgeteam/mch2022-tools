@@ -231,6 +231,36 @@ class WebUSB():
                 result["dirs"].append(fd[1:])
         return result
 
+    def makeFSDir(self, dir):
+        """
+        Create directory on fs
+        root path should be /flash or /sdcard
+
+        parameters:
+            dir (str) : name of the directory
+
+        returns:
+            bool : true if directory was created
+        """
+
+        data = self.sendPacket(WebUSBPacket(Commands.MAKEDIR, self.getMessageId(), dir.encode(encoding='ascii')))
+        return data.decode().rstrip('\x00') == "ok"
+
+    def removeFSFile(self, filename):
+        """
+        remove file on fs
+        root path should be /flash or /sdcard
+
+        parameters:
+            filename (str) : name of the file to remove
+
+        returns:
+            bool : true if file was removed
+        """
+
+        data = self.sendPacket(WebUSBPacket(Commands.DELFILE, self.getMessageId(), filename.encode(encoding='ascii')))
+        return data.decode().rstrip('\x00') == "ok"
+
     def pushFSfile(self, filename, file):
         """
         Upload file to fs
