@@ -23,9 +23,15 @@ Removes an ESP32 app from the AppFS.
 `webusb_fat_ls.py [path]`  
 Returns a directory listing for the specified path.
 
+`webusb_fat_mkdir.py [path]`  
+Create a directory at the specified path.
+
 `webusb_fat_push.py {filename} {target_location}`  
 Uploads a local file to the FAT filesystem.  
 `target_location` should always start with `/flash` or `/sdcard` and include the target filename.
+
+`webusb_fat_rm.py [path]`  
+Delete a file at the specified path.
 
 ### FPGA
 `webusb_fpga.py {filename} [bindings]`  
