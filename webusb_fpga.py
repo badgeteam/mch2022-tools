@@ -28,12 +28,13 @@ def usb_tx(title, data):
     print(f"{title:s} : ", end="", file=sys.stderr)
 
     sent = 0
-    time.sleep(0.1)
+    time.sleep(0.2)
     while len(data) - sent > 0:
         print(".", end="", file=sys.stderr)
         sys.stderr.flush()
         txLength = min(2048, len(data) - sent)
         esp32_ep_out.write(data[sent:sent + txLength])
+        time.sleep(0.1)
         sent += txLength
 
     print("", file=sys.stderr)
