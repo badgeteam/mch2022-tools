@@ -102,7 +102,16 @@ def parse_response(new_data = b""):
         #print("Packet", identifier, command, command_ascii, payload)
         handle_packet(identifier, command, payload)
 
-payload = args.path.encode("ascii")
+path = args.path
+
+if (path.startswith("/flash")):
+    path = "/internal" + path[6:]
+if (path.startswith("/sdcard")):
+    path = "/sd" + path[7:]
+    
+print(path)
+
+payload = path.encode("ascii")
 esp32_ep_out.write(struct.pack("<IIIII", magic, 0x00000000, int.from_bytes(b"FSMD", "little"), len(payload), binascii.crc32(payload)))
 esp32_ep_out.write(payload)
 
