@@ -108,7 +108,10 @@ if (path.startswith("/flash")):
     path = "/internal" + path[6:]
 if (path.startswith("/sdcard")):
     path = "/sd" + path[7:]
-    
+# Remove trailing /
+if path.endswith("/"):
+    path = path[:-1]
+
 print(path)
 
 payload = path.encode("ascii")
