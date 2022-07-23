@@ -1,3 +1,4 @@
+from audioop import add
 import os
 import usb.core
 import usb.util
@@ -85,11 +86,30 @@ class WebUSBPacket():
         return struct.pack("<HIHI", self.command.value, len(self.payload), 0xADDE, self.message_id)
 
 class WebUSB():
-    def __init__(self, boot = True):
+    def __init__(self, boot = True, address : str = None):
+        # Filter address field.
+        if address != None:
+            # Filter our uppercase or whitespace.
+            address = address.strip().lower()
+            if address == '' or address in ["any", "none", "default"]:
+                # If it's an empty string, it might as well be None.
+                address = None
+            else:
+                # Make it a number.
+                try:
+                    address = int(address)
+                except ValueError:
+                    raise ValueError("Badge address must be a number")
+        
         if os.name == 'nt':
             from usb.backend import libusb1
             lube = libusb1.get_backend(find_library=lambda x: os.path.dirname(__file__) + "\\libusb-1.0.dll")
-            self.device = usb.core.find(idVendor=0x16d0, idProduct=0x0f9a, backend=lube)
+            if address != None:
+                self.device = usb.core.find(idVendor=0x16d0, idProduct=0x0f9a, address=address, backend=lube)
+            else:
+                self.device = usb.core.find(idVendor=0x16d0, idProduct=0x0f9a, backend=lube)
+        elif address != None:
+            self.device = usb.core.find(idVendor=0x16d0, idProduct=0x0f9a, address=address)
         else:
             self.device = usb.core.find(idVendor=0x16d0, idProduct=0x0f9a)
 
