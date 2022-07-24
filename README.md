@@ -34,3 +34,7 @@ Loads a bit stream from a file into the FPGA.
 ### General
 `webusb_reset.py`  
 Reboots the device.
+
+## Dependencies
+
+If you do not have them you will need to install PyUSB and LibUSB. You can install PyUSB using `pip3` like so `sudo pip3 install pyusb` and LibUSB should be installed by your package managed, eg with brew: `brew install libusb`
