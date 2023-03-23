@@ -50,6 +50,8 @@ class Badge:
         self.rx_data = bytes([])
         self.packets = []
 
+        self.printGarbage = False
+
     def printProgressBar(self, iteration, total, prefix = '', suffix = '', decimals = 1, length = 50, fill = '█', printEnd = "\r"):
         """
         Call in a loop to create terminal progress bar
@@ -135,8 +137,8 @@ class Badge:
                 "command": command_ascii,
                 "payload": payload
             })
-        #if len(garbage) > 0:
-        #    print("Garbage:", garbage)
+        if len(garbage) > 0 and self.printGarbage:
+            print("Garbage:", garbage, garbage.decode("ascii", "ignore"))
         return True
     
     def receive_packet(self, timeout = 100):
@@ -508,23 +510,85 @@ class Badge:
             return False
         return True if payload[0] else False
 
-    def nvs_list(self, namespace):
-        raise Exception("Work in progress")
-        self.send_packet(b"NVSL", namespace + b"\0")
+    def nvs_list(self, namespace = None):
+        if namespace:
+            self.send_packet(b"NVSL", namespace.encode("ascii", "ignore"))
+        else:
+            self.send_packet(b"NVSL")
         response = self.receive_packet()
         if not response:
-            print("No response")
+            print("No response to NVSL")
             return None
         if not response["command"] == b"NVSL":
             print("No NVSL", response["command"])
             return None
         payload = response["payload"]
 
-        print(payload)
+        output = {}
 
-        output = []
-
+        while len(payload) > 0:
+            namespace_name_length = struct.unpack("<H", payload[:2])[0]
+            payload = payload[2:]
+            namespace_name = payload[:namespace_name_length].decode("ascii", "ignore")
+            payload = payload[namespace_name_length:]
+            key_length = struct.unpack("<H", payload[:2])[0]
+            payload = payload[2:]
+            key = payload[:key_length].decode("ascii", "ignore")
+            payload = payload[key_length:]
+            value_type = struct.unpack("<B", payload[:1])[0]
+            payload = payload[1:]
+            value_size = struct.unpack("<L", payload[:4])[0]
+            payload = payload[4:]
+            if not namespace_name in output:
+                output[namespace_name] = []
+            output[namespace_name].append({
+                "key": key,
+                "type": value_type,
+                "size": value_size
+            })
         return output
+
+    def nvs_read(self, namespace, key, type_number):
+        payload = bytearray()
+        payload += struct.pack("<B", len(namespace))
+        payload += namespace.encode("ascii", "ignore")
+        payload += struct.pack("<B", len(key))
+        payload += key.encode("ascii", "ignore")
+        payload += struct.pack("<B", type_number)
+        self.send_packet(b"NVSR", payload)
+        response = self.receive_packet()
+        if not response:
+            print("No response to NVSR")
+            return None
+        if not response["command"] == b"NVSR":
+            print("No NVSR", response["command"])
+            return None
+        result = response["payload"]
+        if type_number == 0x01:
+            return struct.unpack("<B", result)[0]
+        if type_number == 0x11:
+            return struct.unpack("<b", result)[0]
+        if type_number == 0x02:
+            return struct.unpack("<H", result)[0]
+        if type_number == 0x12:
+            return struct.unpack("<h", result)[0]
+        if type_number == 0x04:
+            return struct.unpack("<I", result)[0]
+        if type_number == 0x14:
+            return struct.unpack("<i", result)[0]
+        if type_number == 0x08:
+            return struct.unpack("<Q", result)[0]
+        if type_number == 0x18:
+            return struct.unpack("<q", result)[0]
+        if type_number == 0x21:
+            return result.decode("utf-8", "ignore")
+        return result
+
+    def nvs_write(self, namespace, key, type_number, value):
+        pass
+
+    def nvs_delete(self, namespace, key):
+        pass
 
     def reset(self, reset_esp = True):
         self.device.ctrl_transfer(self.request_type_out, self.REQUEST_STATE, 0x0000, self.webusb_esp32.bInterfaceNumber) # Connect
