@@ -4,50 +4,6 @@ import argparse
 import sys
 import time
 
-def type_to_name(type_number):
-    if type_number == 0x01:
-        return "uint8"
-    if type_number == 0x11:
-        return "int8"
-    if type_number == 0x02:
-        return "uint16"
-    if type_number == 0x12:
-        return "int16"
-    if type_number == 0x04:
-        return "uint32"
-    if type_number == 0x14:
-        return "int32"
-    if type_number == 0x08:
-        return "uint64"
-    if type_number == 0x18:
-        return "int64"
-    if type_number == 0x21:
-        return "string"
-    if type_number == 0x42:
-        return "blob"
-    return str(type_number)
-
-def should_read(type_number):
-    if type_number == 0x01:
-        return True
-    if type_number == 0x11:
-        return True
-    if type_number == 0x02:
-        return True
-    if type_number == 0x12:
-        return True
-    if type_number == 0x04:
-        return True
-    if type_number == 0x14:
-        return True
-    if type_number == 0x08:
-        return True
-    if type_number == 0x18:
-        return True
-    if type_number == 0x21:
-        return True
-    return False
-
 parser = argparse.ArgumentParser(description='MCH2022 badge NVS list tool')
 parser.add_argument("namespace", help="Namespace", nargs='?', default=None)
 args = parser.parse_args()
@@ -64,9 +20,13 @@ if args.namespace:
     entries = badge.nvs_list(args.namespace)
 else:
     entries = badge.nvs_list()
-for namespace in entries:
-    for entry in entries[namespace]:
-        value = "..."
-        if entry["size"] < 64 and should_read(entry["type"]):
-            value = str(badge.nvs_read(namespace, entry["key"], entry["type"]))
-        print("{: <32} {: <32} {: <8} {:10d} {}".format(namespace, entry["key"], type_to_name(entry["type"]), entry["size"], value))
+
+if not entries:
+    print("Failed to read data")
+else:
+    for namespace in entries:
+        for entry in entries[namespace]:
+            value = "(skipped)"
+            if entry["size"] < 64 and badge.nvs_should_read(entry["type"]):
+                value = str(badge.nvs_read(namespace, entry["key"], entry["type"]))
+            print("{: <32} {: <32} {: <8} {:10d} {}".format(namespace, entry["key"], badge.nvs_type_to_name(entry["type"]), entry["size"], value))

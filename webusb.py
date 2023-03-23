@@ -89,7 +89,10 @@ class Badge:
             return False
         return True
 
-    def send_packet(self, command = b"XXXX", payload = bytes([])):
+    def send_packet(self, command = b"XXXX", payload = bytes([]), flush = True):
+        if flush:
+            self.receive_packets(1)
+            self.packets = []
         self.esp32_ep_out.write(struct.pack("<IIIII", self.MAGIC, 0x00000000, int.from_bytes(command, "little"), len(payload), binascii.crc32(payload)))
         if len(payload) > 0:
             self.esp32_ep_out.write(payload)
@@ -585,10 +588,131 @@ class Badge:
         return result
 
     def nvs_write(self, namespace, key, type_number, value):
-        pass
+        payload = bytearray()
+        payload += struct.pack("<B", len(namespace))
+        payload += namespace.encode("ascii", "ignore")
+        payload += struct.pack("<B", len(key))
+        payload += key.encode("ascii", "ignore")
+        payload += struct.pack("<B", type_number)
+        if type_number == 0x01:
+            payload += struct.pack("<B", value)
+        elif type_number == 0x11:
+            payload += struct.pack("<b", value)
+        elif type_number == 0x02:
+            payload += struct.pack("<H", value)
+        elif type_number == 0x12:
+            payload += struct.pack("<h", value)
+        elif type_number == 0x04:
+            payload += struct.pack("<I", value)
+        elif type_number == 0x14:
+            payload += struct.pack("<i", value)
+        elif type_number == 0x08:
+            payload += struct.pack("<Q", value)
+        elif type_number == 0x18:
+            payload += struct.pack("<q", value)
+        elif type_number == 0x21:
+            if type(value) == bytes or type(value) == bytearray:
+                payload += value
+            else:
+                payload += value.encode("utf-8", "ignore")
+        elif type_number == 0x42:
+            payload += bytes(value)
+        else:
+            raise ValueError("Invalid type")
+        self.send_packet(b"NVSW", payload)
+        response = self.receive_packet()
+        if not response:
+            print("No response to NVSW")
+            return None
+        if not response["command"] == b"NVSW":
+            print("No NVSW", response["command"])
+            return None
+        result = response["payload"]
+        return result
 
-    def nvs_delete(self, namespace, key):
-        pass
+    def nvs_remove(self, namespace, key):
+        payload = bytearray()
+        payload += struct.pack("<B", len(namespace))
+        payload += namespace.encode("ascii", "ignore")
+        payload += struct.pack("<B", len(key))
+        payload += key.encode("ascii", "ignore")
+        self.send_packet(b"NVSD", payload)
+        response = self.receive_packet()
+        if not response:
+            print("No response to NVSD")
+            return None
+        if not response["command"] == b"NVSD":
+            print("No NVSD", response["command"])
+            return None
+        result = response["payload"]
+        return result
+
+    def nvs_type_to_name(self, type_number):
+        if type_number == 0x01:
+            return "u8"
+        if type_number == 0x11:
+            return "i8"
+        if type_number == 0x02:
+            return "u16"
+        if type_number == 0x12:
+            return "i16"
+        if type_number == 0x04:
+            return "u32"
+        if type_number == 0x14:
+            return "i32"
+        if type_number == 0x08:
+            return "u64"
+        if type_number == 0x18:
+            return "i64"
+        if type_number == 0x21:
+            return "string"
+        if type_number == 0x42:
+            return "blob"
+        return str(type_number)
+
+    def nvs_name_to_type(self, type_name):
+        if type_name == "u8":
+            return 0x01
+        if type_name == "i8":
+            return 0x11
+        if type_name == "u16":
+            return 0x02
+        if type_name == "i16":
+            return 0x12
+        if type_name == "u32":
+            return 0x04
+        if type_name == "i32":
+            return 0x14
+        if type_name == "u64":
+            return 0x08
+        if type_name == "i64":
+            return 0x18
+        if type_name == "string":
+            return 0x21
+        if type_name == "blob":
+            return 0x42
+        raise ValueError("Invalid type name")
+
+    def nvs_should_read(self, type_number):
+        if type_number == 0x01:
+            return True
+        if type_number == 0x11:
+            return True
+        if type_number == 0x02:
+            return True
+        if type_number == 0x12:
+            return True
+        if type_number == 0x04:
+            return True
+        if type_number == 0x14:
+            return True
+        if type_number == 0x08:
+            return True
+        if type_number == 0x18:
+            return True
+        if type_number == 0x21:
+            return True
+        return False
 
     def reset(self, reset_esp = True):
         self.device.ctrl_transfer(self.request_type_out, self.REQUEST_STATE, 0x0000, self.webusb_esp32.bInterfaceNumber) # Connect
