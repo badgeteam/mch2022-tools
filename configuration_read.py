@@ -9,7 +9,6 @@ parser = argparse.ArgumentParser(description='MCH2022 badge NVS read tool')
 parser.add_argument("namespace", help="Namespace")
 parser.add_argument("key", help="Key")
 parser.add_argument("type", help="Type, one of u8, i8, u16, i16, u32, i32, u64, i64, string or blob")
-parser.add_argument('--raw', '-r', '-R', action='store_true', help="Output raw bytes (only used for blob type)")
 args = parser.parse_args()
 
 badge = Badge()
@@ -23,7 +22,7 @@ if not badge.begin():
 
 value = badge.nvs_read(args.namespace, args.key, type_number)
 
-if args.raw and type_name == "blob":
+if type_name == "blob":
     sys.stdout.buffer.write(value)
 else:
     print(value)
