@@ -168,6 +168,13 @@ class Badge:
             return False
         if not response["command"] == b"SYNC":
             return False
+        if  len(response["payload"]) != 2 or (struct.unpack("<H", response["payload"])[0] < 0x0001):
+            print("Please update your MCH2022 badge to firmware version 2.0.1 or newer. This firmware is currently available on the experimental update channel only.")
+            print("To install go to Settings > Install experimental firmware on your badge.")
+            print()
+            print("The tools for older firmwares can be found in the 'fsoverbus' subfolder of this repository")
+            sys.exit(1)
+            return False
         return True
 
     def ping(self, payload):
