@@ -10,6 +10,7 @@ parser.add_argument("file", help="Application binary")
 parser.add_argument("name", help="Application name")
 parser.add_argument("title", help="Application title")
 parser.add_argument("version", type=int, help="Application version")
+parser.add_argument('--run', '-r', '-R', action='store_true', help="Run application after uploading")
 args = parser.parse_args()
 
 name = args.name.encode("ascii", "ignore")
@@ -34,3 +35,13 @@ if result:
 else:
     print("Failed to install app")
     sys.exit(1)
+
+if args.run:
+    result = badge.app_run(name.encode('ascii', "ignore"))
+
+    if result:
+        badge.reset(False)
+        print("Started")
+    else:
+        print("Failed to start")
+        sys.exit(1)
