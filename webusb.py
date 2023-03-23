@@ -214,7 +214,7 @@ class Badge:
             payload = payload[item_name_length:]
             data = payload[:4 + 4 + 8]
             payload = payload[4 + 4 + 8:]
-            (stat_res, item_size, item_modified) = struct.unpack("<IIQ", data)
+            (stat_res, item_size, item_modified) = struct.unpack("<iIQ", data)
             stat = None
             if stat_res == 0:
                 stat = {
