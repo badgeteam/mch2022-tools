@@ -191,6 +191,16 @@ class Badge:
                 print(i, int(payload[i]), int(response["payload"][i]))
             return False
         return True
+
+    def info(self):
+        self.send_packet(b"INFO")
+        response = self.receive_packet()
+        if not response:
+            return False
+        if not response["command"] == b"INFO":
+            print("No INFO", response["command"])
+            return False
+        return response["payload"].decode("ascii", "ignore")
     
     def fs_list(self, payload):
         self.send_packet(b"FSLS", payload + b"\0")
