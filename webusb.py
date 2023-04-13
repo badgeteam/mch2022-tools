@@ -505,8 +505,11 @@ class Badge:
             return False
         return True if payload[0] else False
 
-    def app_run(self, name):
-        self.send_packet(b"APPX", name)
+    def app_run(self, name, command = None):
+        if command:
+            self.send_packet(b"APPX", name + b"\0" + command)
+        else:
+            self.send_packet(b"APPX", name)
         response = self.receive_packet()
         if not response:
             print("No response to APPX")
