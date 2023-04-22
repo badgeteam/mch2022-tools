@@ -37,7 +37,7 @@ else:
     sys.exit(1)
 
 if args.run:
-    result = badge.app_run(name.encode('ascii', "ignore"))
+    result = badge.app_run(name)
 
     if result:
         badge.reset(False)
