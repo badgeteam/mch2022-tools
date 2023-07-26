@@ -79,7 +79,7 @@ else:
 requested_len = 4 + 4 - 1 # 2 times "FPGA" if we are unlucky and "PGAFPGA" got transmitted
 data = bytearray()
 
-while (len(data) < requested_len) or (data.find(b'FPGA')) >= 1:
+while (len(data) < requested_len) or (data.find(b'FPGA') == -1):
     try:
         data += bytes(esp32_ep_in.read(32))
     except Exception as e:
