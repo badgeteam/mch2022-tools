@@ -80,7 +80,7 @@ The value can either be provided using optional command line argument `[value]` 
 Removes a configuration entry with key `{key}` in namespace `{namespace}` from the NVS partition.
 
 ### FPGA
-`webusb_fpga.py {filename} [bindings]`
+`fpga.py {filename} [bindings]`
 
 Loads a bit stream from a file into the FPGA. This tool also allows for uploading and presenting files to the FPGA via the SPI interface that connects the FPGA to the ESP32.
 

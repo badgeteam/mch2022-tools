@@ -79,7 +79,9 @@ else:
 requested_len = 4 + 4 - 1 # 2 times "FPGA" if we are unlucky and "PGAFPGA" got transmitted
 data = bytearray()
 
-while (len(data) < requested_len) or (data.find(b'FPGA') == -1):
+while (data.find(b'FPGA') == -1):
+    if len(data) >= requested_len * 50: # ~50 tries
+        raise ValueError("Badge does not answer with FPGA string")
     try:
         data += bytes(esp32_ep_in.read(32))
     except Exception as e:
